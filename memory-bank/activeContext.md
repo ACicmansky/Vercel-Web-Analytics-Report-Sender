@@ -41,10 +41,10 @@
 - **Status**: ✅ Implemented
 
 ### AI Provider
-- **Decision**: Use Google Gemini 2.0 Flash exclusively
+- **Decision**: Use Google Gemini 2.5 Flash exclusively
 - **Rationale**: Cost-effective (free tier), fast, excellent quality, simpler integration
 - **Status**: ✅ Implemented
-- **Model**: gemini-2.0-flash-exp
+- **Model**: gemini-2.5-flash
 
 ### Email Service
 - **Decision**: Standard SMTP with TLS

@@ -23,10 +23,10 @@
   - Async support (httpx)
 
 #### AI Integration
-- **OpenAI Python SDK** or **Anthropic SDK**
-  - AI-powered summary generation
+- **Google GenAI SDK** (google-genai>=0.2.0)
+  - AI-powered summary generation using Gemini 2.5 Flash
   - Structured prompt handling
-  - Streaming support
+  - Cost-effective with free tier
 
 #### Email Delivery
 - **smtplib** (standard library) + **email** package
@@ -64,10 +64,13 @@
 ### Development Tools
 
 #### Dependency Management
-- **Poetry** or **pip + requirements.txt**
-  - Current: pyproject.toml suggests Poetry
-  - Dependency resolution
+- **uv** (modern Python package manager)
+  - 10-100x faster than pip/Poetry
+  - Better dependency resolution
+  - Simpler workflow
   - Virtual environment management
+  - Install: `pip install uv`
+  - Usage: `uv sync`, `uv add package-name`
 
 #### Code Quality
 - **black** - Code formatting
@@ -144,10 +147,8 @@ VERCEL_PROJECT_ID=your_project_id_here
 TARGET_WEBSITE=www.lemolegal.sk
 
 # AI Configuration
-OPENAI_API_KEY=your_openai_key_here
-# or
-ANTHROPIC_API_KEY=your_anthropic_key_here
-AI_MODEL=gpt-4-turbo-preview
+GOOGLE_API_KEY=your_google_gemini_key_here
+AI_MODEL=gemini-2.5-flash
 
 # Email Configuration
 SMTP_HOST=smtp.gmail.com
@@ -171,11 +172,11 @@ LOG_FILE=logs/app.log
 
 ### Prerequisites
 - Python 3.11 or higher
-- Poetry (for dependency management)
+- uv package manager (install via `pip install uv`)
 - Git
 - Vercel account with API access
-- OpenAI or Anthropic API key
-- SMTP email account
+- Google Gemini API key (free tier available)
+- SMTP email account (Gmail recommended)
 
 ### Installation Steps
 ```powershell
@@ -183,18 +184,21 @@ LOG_FILE=logs/app.log
 git clone <repository-url>
 cd Vercel-Web-Analytics-Report-Sender
 
+# Install uv (if not already installed)
+pip install uv
+
 # Install dependencies
-poetry install
+uv sync
 
 # Copy environment template
-cp .env.example .env
+Copy-Item .env.example .env
 # Edit .env with your credentials
 
 # Run tests
-poetry run pytest
+pytest
 
 # Run application
-poetry run python main.py
+python main.py
 ```
 
 ## API Documentation
@@ -205,10 +209,12 @@ poetry run python main.py
 - **Rate Limits**: Check Vercel documentation
 - **Documentation**: https://vercel.com/docs/rest-api
 
-### OpenAI API
-- **Endpoint**: `https://api.openai.com/v1/chat/completions`
-- **Models**: gpt-4-turbo-preview, gpt-3.5-turbo
-- **Documentation**: https://platform.openai.com/docs
+### Google Gemini API
+- **Endpoint**: Via Google GenAI SDK
+- **Models**: gemini-2.5-flash (recommended)
+- **API Key**: https://aistudio.google.com/apikey
+- **Documentation**: https://ai.google.dev/docs
+- **Free Tier**: 15 requests per minute
 
 ## Technical Constraints
 
