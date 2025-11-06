@@ -21,10 +21,10 @@ def create_summary_prompt(summary: AnalyticsSummary, website: str) -> str:
     visitors_trend = _format_trend(summary.unique_visitors)
 
     # Format top pages
-    top_pages_text = "\n".join(
-        f"  - {page['path']}: {page['views']} views, {page['unique_visitors']} unique visitors"
-        for page in summary.top_pages[:5]
-    )
+    # top_pages_text = "\n".join(
+    #     f"  - {page['path']}: {page['views']} views, {page['unique_visitors']} unique visitors"
+    #     for page in summary.top_pages[:5]
+    # )
 
     # Format traffic sources
     sources_text = "\n".join(
@@ -44,45 +44,29 @@ def create_summary_prompt(summary: AnalyticsSummary, website: str) -> str:
         for geo in summary.geographic_breakdown[:5]
     )
 
-    prompt = f"""You are an expert web analytics consultant. Generate a professional, 
-concise analytics report for {website} based on the following data.
+    prompt = f"""Vytvor veľmi stručnú analytickú správu pre {website} (obdobie: {summary.period_start.strftime('%d.%m.')} - {summary.period_end.strftime('%d.%m.%Y')}).
 
-REPORTING PERIOD:
-{summary.period_start.strftime('%B %d, %Y')} to {summary.period_end.strftime('%B %d, %Y')} ({summary.period_days} days)
+DÁTA:
+- Zobrazenia: {summary.total_views.current:,} {views_trend}
+- Návštevníci: {summary.unique_visitors.current:,} {visitors_trend}
+- Top zdroje: {', '.join(source['source'] for source in summary.top_sources[:3])}
+- Top lokality: {', '.join(geo['location'] for geo in summary.geographic_breakdown[:3])}
 
-KEY METRICS:
-- Total Page Views: {summary.total_views.current:,} {views_trend}
-- Unique Visitors: {summary.unique_visitors.current:,} {visitors_trend}
-{_format_optional_metric('Average Session Duration', summary.avg_session_duration)}
-{_format_optional_metric('Bounce Rate', summary.bounce_rate, is_percentage=True)}
+KĽÚČOVÉ POZNATKY:
+{chr(10).join(f'- {insight}' for insight in summary.key_insights[:3])}
 
-TOP PAGES:
-{top_pages_text}
+ODPORÚČANIA:
+{chr(10).join(f'- {rec}' for rec in summary.recommendations[:2])}
 
-TRAFFIC SOURCES:
-{sources_text}
-
-DEVICE BREAKDOWN:
-{devices_text}
-
-GEOGRAPHIC DISTRIBUTION:
-{geo_text}
-
-KEY INSIGHTS:
-{chr(10).join(f'- {insight}' for insight in summary.key_insights)}
-
-RECOMMENDATIONS:
-{chr(10).join(f'- {rec}' for rec in summary.recommendations)}
-
-Please provide a professional summary that:
-1. Highlights the most important metrics and trends
-2. Explains what the data means in business terms
-3. Identifies opportunities and areas of concern
-4. Provides 2-3 actionable recommendations
-5. Uses a professional but accessible tone
-6. Keeps the summary concise (300-400 words)
-
-Format the response in clear sections with headers."""
+POŽIADAVKY:
+- Cieľová skupina: zaneprázdnení právnici
+- Bez úvodnej hlavičky - začni priamo zhrnutím (1-2 vety o celkovom stave)
+- Potom sekcia "## Kľúčové zistenia" s 1-3 bodmi (každý max 1 veta)
+- Potom sekcia "## Odporúčania" s 1-2 bodmi (každý max 1 veta)
+- Celková dĺžka: max 150 slov
+- Tón: profesionálny, priamy, bez zbytočných slov
+- Bez tabuliek, bez opakovaní metrík z emailu
+- Zameraj sa na to, čo je DÔLEŽITÉ pre rozhodovanie"""
 
     return prompt
 
@@ -124,8 +108,7 @@ def _format_optional_metric(
 
 def create_system_prompt() -> str:
     """Create system prompt for AI model."""
-    return """You are a professional web analytics consultant with expertise in 
-interpreting website traffic data and providing actionable business insights. 
-Your reports are clear, concise, and focused on helping website owners understand 
-their audience and improve their online presence. You communicate complex data 
-in an accessible way while maintaining professional standards."""
+    return """Si konzultant pre webovú analytiku špecializujúci sa na právnické kancelárie. 
+Tvoje správy sú extrémne stručné, priame a zamerané na akčné poznatky. 
+Píšeš pre zaneprázdnených právnikov, ktorí potrebujú vedieť len to najdôležitejšie. 
+Žiadne zbytočné slová, žiadne opakované informácie, len kľúčové zistenia a konkrétne odporúčania."""

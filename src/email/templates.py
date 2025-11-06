@@ -1,7 +1,7 @@
 """Email templates for analytics reports."""
 
+import markdown
 from datetime import date, datetime
-from typing import Optional
 
 from src.processing.analyzer import AnalyticsSummary
 
@@ -22,8 +22,8 @@ def create_html_email(
     Returns:
         HTML email content
     """
-    # Format AI summary with proper line breaks
-    ai_summary_html = ai_summary.replace("\n", "<br>")
+    # Format AI summary 
+    ai_summary_html = markdown.markdown(ai_summary)
 
     # Format metrics with trend indicators
     views_trend = _format_trend_html(summary.total_views)
@@ -59,31 +59,31 @@ def create_html_email(
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Analytics Report - {website}</title>
+    <title>Analytická správa - {website}</title>
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #374151; margin: 0; padding: 0; background-color: #f9fafb;">
     <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
         
         <!-- Header -->
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px 20px; text-align: center;">
-            <h1 style="margin: 0; font-size: 28px; font-weight: 600;">📊 Analytics Report</h1>
+            <h1 style="margin: 0; font-size: 28px; font-weight: 600;">📊 Analytická správa</h1>
             <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.9;">{website}</p>
             <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.8;">
-                {summary.period_start.strftime('%B %d, %Y')} - {summary.period_end.strftime('%B %d, %Y')}
+                {summary.period_start.strftime('%d. %B %Y')} - {summary.period_end.strftime('%d. %B %Y')}
             </p>
         </div>
 
         <!-- Key Metrics -->
         <div style="padding: 30px 20px; background-color: #f9fafb;">
-            <h2 style="margin: 0 0 20px 0; font-size: 20px; color: #1f2937;">📈 Key Metrics</h2>
+            <h2 style="margin: 0 0 20px 0; font-size: 20px; color: #1f2937;">📈 Kľúčové metriky</h2>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                 <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea;">
-                    <div style="font-size: 14px; color: #6b7280; margin-bottom: 5px;">Total Views</div>
+                    <div style="font-size: 14px; color: #6b7280; margin-bottom: 5px;">Celkový počet zobrazení</div>
                     <div style="font-size: 28px; font-weight: 600; color: #1f2937;">{summary.total_views.current:,}</div>
                     <div style="font-size: 12px; margin-top: 5px;">{views_trend}</div>
                 </div>
                 <div style="background: white; padding: 20px; border-radius: 8px; border-left: 4px solid #764ba2;">
-                    <div style="font-size: 14px; color: #6b7280; margin-bottom: 5px;">Unique Visitors</div>
+                    <div style="font-size: 14px; color: #6b7280; margin-bottom: 5px;">Jedinečných návštevníkov</div>
                     <div style="font-size: 28px; font-weight: 600; color: #1f2937;">{summary.unique_visitors.current:,}</div>
                     <div style="font-size: 12px; margin-top: 5px;">{visitors_trend}</div>
                 </div>
@@ -92,38 +92,38 @@ def create_html_email(
 
         <!-- AI Summary -->
         <div style="padding: 30px 20px; background-color: #ffffff;">
-            <h2 style="margin: 0 0 15px 0; font-size: 20px; color: #1f2937;">🤖 AI-Powered Insights</h2>
+            <h2 style="margin: 0 0 15px 0; font-size: 20px; color: #1f2937;">🤖 AI prehľad</h2>
             <div style="background: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 15px; border-radius: 4px; font-size: 14px; line-height: 1.6;">
                 {ai_summary_html}
             </div>
         </div>
 
         <!-- Top Pages -->
-        <div style="padding: 30px 20px; background-color: #f9fafb;">
-            <h2 style="margin: 0 0 15px 0; font-size: 20px; color: #1f2937;">🏆 Top Pages</h2>
+        <!--<div style="padding: 30px 20px; background-color: #f9fafb;">
+            <h2 style="margin: 0 0 15px 0; font-size: 20px; color: #1f2937;">🏆 Najnavštevovanejšie stránky</h2>
             <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden;">
                 <thead>
                     <tr style="background-color: #f3f4f6;">
-                        <th style="padding: 12px 8px; text-align: left; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Page</th>
-                        <th style="padding: 12px 8px; text-align: right; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Views</th>
-                        <th style="padding: 12px 8px; text-align: right; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Visitors</th>
+                        <th style="padding: 12px 8px; text-align: left; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Stránka</th>
+                        <th style="padding: 12px 8px; text-align: right; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Zobrazenia</th>
+                        <th style="padding: 12px 8px; text-align: right; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Návštevníci</th>
                     </tr>
                 </thead>
                 <tbody>
                     {top_pages_rows}
                 </tbody>
             </table>
-        </div>
+        </div>-->
 
         <!-- Traffic Sources -->
         <div style="padding: 30px 20px; background-color: #ffffff;">
-            <h2 style="margin: 0 0 15px 0; font-size: 20px; color: #1f2937;">🌐 Traffic Sources</h2>
+            <h2 style="margin: 0 0 15px 0; font-size: 20px; color: #1f2937;">🌐 Zdroje návštevnosti</h2>
             <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden;">
                 <thead>
                     <tr style="background-color: #f3f4f6;">
-                        <th style="padding: 12px 8px; text-align: left; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Source</th>
-                        <th style="padding: 12px 8px; text-align: right; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Visitors</th>
-                        <th style="padding: 12px 8px; text-align: right; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Share</th>
+                        <th style="padding: 12px 8px; text-align: left; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Zdroj</th>
+                        <th style="padding: 12px 8px; text-align: right; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Návštevníci</th>
+                        <th style="padding: 12px 8px; text-align: right; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">Podiel</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -135,10 +135,10 @@ def create_html_email(
         <!-- Footer -->
         <div style="padding: 20px; background-color: #f9fafb; text-align: center; border-top: 1px solid #e5e7eb;">
             <p style="margin: 0; font-size: 12px; color: #6b7280;">
-                Generated on {datetime.now().strftime('%B %d, %Y at %I:%M %p')}
+                Vygenerované {datetime.now().strftime('%d. %B %Y o %H:%M')}
             </p>
             <p style="margin: 5px 0 0 0; font-size: 12px; color: #9ca3af;">
-                Automated Analytics Report • Design by &copy; {date.today().year} <a href="mailto:andrej.cicmansky@gmail.com">Andrej Čičmanský</a>
+                Automatická analytická správa • Design by &copy; {date.today().year} <a href="mailto:andrej.cicmansky@gmail.com">Andrej Čičmanský</a>
             </p>
         </div>
     </div>
@@ -182,38 +182,38 @@ def create_plain_text_email(
 
     text = f"""
 ═══════════════════════════════════════════════════════════
-  📊 ANALYTICS REPORT - {website.upper()}
+  📊 ANALYTICKÝ REPORT - {website.upper()}
 ═══════════════════════════════════════════════════════════
 
-Period: {summary.period_start.strftime('%B %d, %Y')} - {summary.period_end.strftime('%B %d, %Y')}
-Duration: {summary.period_days} days
+Obdobie: {summary.period_start.strftime('%d. %B %Y')} - {summary.period_end.strftime('%d. %B %Y')}
+Trvanie: {summary.period_days} dní
 
 ───────────────────────────────────────────────────────────
-📈 KEY METRICS
+📈 KĽÚČOVÉ METRIKY
 ───────────────────────────────────────────────────────────
 
-Total Page Views: {summary.total_views.current:,}
+Celkový počet zobrazení stránok: {summary.total_views.current:,}
 {views_trend}
 
-Unique Visitors: {summary.unique_visitors.current:,}
+Jedinečných návštevníkov: {summary.unique_visitors.current:,}
 {visitors_trend}
 
 ───────────────────────────────────────────────────────────
-🤖 AI-POWERED INSIGHTS
+🤖 AI ZHRNUTIE
 ───────────────────────────────────────────────────────────
 
 {ai_summary}
 
 ───────────────────────────────────────────────────────────
-🌐 TRAFFIC SOURCES
+🌐 ZDROJE NÁVŠTEVNOSTI
 ───────────────────────────────────────────────────────────
 
 {sources_text}
 
 ───────────────────────────────────────────────────────────
 
-Generated on {datetime.now().strftime('%B %d, %Y at %I:%M %p')}
-Automated Analytics Report • Design by &copy; {date.today().year} <a href="mailto:andrej.cicmansky@gmail.com">Andrej Čičmanský</a>
+Vygenerované {datetime.now().strftime('%d. %B %Y o %H:%M')}
+Automatický analytický report • Design by &copy; {date.today().year} <a href="mailto:andrej.cicmansky@gmail.com">Andrej Čičmanský</a>
 
 ═══════════════════════════════════════════════════════════
     """
