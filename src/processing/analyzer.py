@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 from loguru import logger
 from pydantic import BaseModel, Field
 
-from src.vercel.models import AnalyticsData
+from src.google_analytics.models import GAAnalyticsData
 
 
 class MetricChange(BaseModel):
@@ -54,8 +54,13 @@ class AnalyticsSummary(BaseModel):
     key_insights: List[str] = Field(default_factory=list)
     recommendations: List[str] = Field(default_factory=list)
 
+    # Conversion metrics
+    total_conversions: Optional[MetricChange] = None
+    conversion_rate: Optional[MetricChange] = None
+    engagement_rate: Optional[MetricChange] = None
+
     # Raw data reference
-    raw_analytics: Optional[AnalyticsData] = None
+    raw_analytics: Optional[GAAnalyticsData] = None
 
 
 class AnalyticsAnalyzer:
@@ -67,8 +72,8 @@ class AnalyticsAnalyzer:
 
     def analyze(
         self,
-        current_data: AnalyticsData,
-        previous_data: Optional[AnalyticsData] = None,
+        current_data: GAAnalyticsData,
+        previous_data: Optional[GAAnalyticsData] = None,
     ) -> AnalyticsSummary:
         """
         Analyze analytics data and generate summary with insights.
@@ -86,80 +91,91 @@ class AnalyticsAnalyzer:
         period_days = (current_data.end_date - current_data.start_date).days
 
         # Process metrics with comparisons
+        # Map GA sessions to total_views for compatibility
         total_views = self._compare_metric(
-            current_data.total_views,
-            previous_data.total_views if previous_data else None,
-            "Total Views",
+            current_data.audience.sessions,
+            previous_data.audience.sessions if previous_data else None,
+            "Sessions",
         )
 
+        # Map GA total_users to unique_visitors
         unique_visitors = self._compare_metric(
-            current_data.unique_visitors,
-            previous_data.unique_visitors if previous_data else None,
-            "Unique Visitors",
+            current_data.audience.total_users,
+            previous_data.audience.total_users if previous_data else None,
+            "Total Users",
         )
 
-        avg_session_duration = None
-        if current_data.avg_session_duration is not None:
-            avg_session_duration = self._compare_metric(
-                current_data.avg_session_duration,
-                (
-                    previous_data.avg_session_duration
-                    if previous_data and previous_data.avg_session_duration
-                    else None
-                ),
-                "Avg Session Duration",
-            )
+        # Map GA average_engagement_time to avg_session_duration
+        avg_session_duration = self._compare_metric(
+            current_data.engagement.average_engagement_time,
+            (
+                previous_data.engagement.average_engagement_time
+                if previous_data
+                else None
+            ),
+            "Avg Engagement Time",
+        )
 
+        # Calculate bounce rate from engagement rate (inverse)
         bounce_rate = None
-        if current_data.bounce_rate is not None:
+        if current_data.engagement.engagement_rate is not None:
+            current_bounce = 100 - current_data.engagement.engagement_rate
+            previous_bounce = (
+                100 - previous_data.engagement.engagement_rate
+                if previous_data
+                else None
+            )
             bounce_rate = self._compare_metric(
-                current_data.bounce_rate,
-                (
-                    previous_data.bounce_rate
-                    if previous_data and previous_data.bounce_rate
-                    else None
-                ),
+                current_bounce,
+                previous_bounce,
                 "Bounce Rate",
             )
 
-        # Process top pages
-        top_pages = [
-            {
-                "path": page.path,
-                "views": page.views,
-                "unique_visitors": page.unique_visitors,
-            }
-            for page in current_data.top_pages[:5]
-        ]
+        # Process conversion metrics
+        total_conversions = self._compare_metric(
+            current_data.total_conversions,
+            previous_data.total_conversions if previous_data else None,
+            "Total Conversions",
+        )
 
-        # Process traffic sources
+        conversion_rate = self._compare_metric(
+            current_data.conversion_rate,
+            previous_data.conversion_rate if previous_data else None,
+            "Conversion Rate",
+        )
+
+        engagement_rate = self._compare_metric(
+            current_data.engagement.engagement_rate,
+            previous_data.engagement.engagement_rate if previous_data else None,
+            "Engagement Rate",
+        )
+
+        # Top pages not available in GA4 basic metrics
+        # Could be added later with page_path dimension
+        top_pages = []
+
+        # Process traffic sources (acquisition)
         top_sources = [
             {
-                "source": source.source,
-                "visitors": source.visitors,
+                "source": f"{source.source}/{source.medium}",
+                "visitors": source.users,
                 "percentage": source.percentage,
             }
-            for source in current_data.traffic_sources[:5]
+            for source in current_data.acquisition[:5]
         ]
 
-        # Process device breakdown
-        device_breakdown = [
-            {
-                "device": device.device_type,
-                "count": device.count,
-                "percentage": device.percentage,
-            }
-            for device in current_data.device_stats
-        ]
+        # Device breakdown not included in basic GA4 metrics
+        # Could be added later if needed
+        device_breakdown = []
 
-        # Process geographic breakdown
+        # Process geographic breakdown (cities)
         geographic_breakdown = [
             {
-                "country": geo.country,
-                "visitors": geo.visitors,
+                "location": f"{geo.city}, {geo.country}",
+                "visitors": geo.users,
                 "percentage": geo.percentage,
             }
-            for geo in current_data.geographic_data[:5]
+            for geo in current_data.geographic[:10]
         ]
 
         # Generate insights
@@ -185,6 +201,9 @@ class AnalyticsAnalyzer:
             unique_visitors=unique_visitors,
             avg_session_duration=avg_session_duration,
             bounce_rate=bounce_rate,
+            total_conversions=total_conversions,
+            conversion_rate=conversion_rate,
+            engagement_rate=engagement_rate,
             top_pages=top_pages,
             top_sources=top_sources,
             device_breakdown=device_breakdown,
@@ -229,8 +248,8 @@ class AnalyticsAnalyzer:
 
     def _generate_insights(
         self,
-        current_data: AnalyticsData,
-        previous_data: Optional[AnalyticsData],
+        current_data: GAAnalyticsData,
+        previous_data: Optional[GAAnalyticsData],
         views_change: MetricChange,
         visitors_change: MetricChange,
     ) -> List[str]:
@@ -249,43 +268,46 @@ class AnalyticsAnalyzer:
                 f"compared to the previous period"
             )
 
-        # Top page insight
-        if current_data.top_pages:
-            top_page = current_data.top_pages[0]
+        # Engagement insight
+        if current_data.engagement.engagement_rate > 70:
             insights.append(
-                f"Most popular page: '{top_page.path}' "
-                f"with {top_page.views} views"
+                f"Strong engagement rate of {current_data.engagement.engagement_rate:.1f}% "
+                "indicates visitors are finding content valuable"
+            )
+        elif current_data.engagement.engagement_rate < 40:
+            insights.append(
+                f"Low engagement rate of {current_data.engagement.engagement_rate:.1f}% "
+                "suggests content may need improvement"
+            )
+
+        # Conversion insight
+        if current_data.total_conversions > 0:
+            insights.append(
+                f"Total conversions: {current_data.total_conversions} "
+                f"(rate: {current_data.conversion_rate:.2f}%)"
             )
 
         # Traffic source insight
-        if current_data.traffic_sources:
-            top_source = current_data.traffic_sources[0]
+        if current_data.acquisition:
+            top_source = current_data.acquisition[0]
             insights.append(
-                f"Primary traffic source: {top_source.source} "
-                f"({top_source.percentage:.1f}% of traffic)"
-            )
-
-        # Device insight
-        if current_data.device_stats:
-            primary_device = current_data.device_stats[0]
-            insights.append(
-                f"Most visitors use {primary_device.device_type} "
-                f"({primary_device.percentage:.1f}%)"
+                f"Primary traffic source: {top_source.source}/{top_source.medium} "
+                f"({top_source.percentage:.1f}% of users)"
             )
 
         # Geographic insight
-        if current_data.geographic_data:
-            top_country = current_data.geographic_data[0]
+        if current_data.geographic:
+            top_location = current_data.geographic[0]
             insights.append(
-                f"Top geographic region: {top_country.country} "
-                f"({top_country.percentage:.1f}% of visitors)"
+                f"Top location: {top_location.city}, {top_location.country} "
+                f"({top_location.percentage:.1f}% of users)"
             )
 
         return insights
 
     def _generate_recommendations(
         self,
-        current_data: AnalyticsData,
+        current_data: GAAnalyticsData,
         views_change: MetricChange,
         bounce_rate: Optional[MetricChange],
     ) -> List[str]:
@@ -305,22 +327,31 @@ class AnalyticsAnalyzer:
                 "and content relevance"
             )
 
-        # Content recommendations
-        if current_data.top_pages and len(current_data.top_pages) > 0:
+        # Engagement recommendations
+        if current_data.engagement.engagement_rate < 50:
             recommendations.append(
-                "Focus content creation on topics similar to your top-performing pages"
+                "Low engagement rate - consider improving content quality, "
+                "page load speed, and user experience"
+            )
+
+        # Conversion recommendations
+        if current_data.conversion_rate < 1.0 and current_data.audience.sessions > 100:
+            recommendations.append(
+                "Low conversion rate - review call-to-action placement "
+                "and form accessibility"
             )
 
         # Traffic source recommendations
-        if current_data.traffic_sources:
+        if current_data.acquisition:
             direct_traffic = sum(
-                s.visitors
-                for s in current_data.traffic_sources
+                s.users
+                for s in current_data.acquisition
                 if "direct" in s.source.lower()
             )
-            if direct_traffic > current_data.unique_visitors * 0.5:
+            if direct_traffic > current_data.audience.total_users * 0.5:
                 recommendations.append(
-                    "Consider diversifying traffic sources through SEO and social media"
+                    "High direct traffic - consider diversifying sources through SEO, "
+                    "social media, and content marketing"
                 )
 
         return recommendations

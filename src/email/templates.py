@@ -1,6 +1,6 @@
 """Email templates for analytics reports."""
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 
 from src.processing.analyzer import AnalyticsSummary
@@ -138,7 +138,7 @@ def create_html_email(
                 Generated on {datetime.now().strftime('%B %d, %Y at %I:%M %p')}
             </p>
             <p style="margin: 5px 0 0 0; font-size: 12px; color: #9ca3af;">
-                Automated Analytics Report • Powered by Vercel & AI
+                Automated Analytics Report • Design by &copy; {date.today().year} <a href="mailto:andrej.cicmansky@gmail.com">Andrej Čičmanský</a>
             </p>
         </div>
     </div>
@@ -168,11 +168,11 @@ def create_plain_text_email(
     views_trend = _format_trend_text(summary.total_views)
     visitors_trend = _format_trend_text(summary.unique_visitors)
 
-    # Top pages
-    top_pages_text = "\n".join(
-        f"  {i+1}. {page['path']}\n     Views: {page['views']:,} | Visitors: {page['unique_visitors']:,}"
-        for i, page in enumerate(summary.top_pages[:5])
-    )
+    # # Top pages
+    # top_pages_text = "\n".join(
+    #     f"  {i+1}. {page['path']}\n     Views: {page['views']:,} | Visitors: {page['unique_visitors']:,}"
+    #     for i, page in enumerate(summary.top_pages[:5])
+    # )
 
     # Traffic sources
     sources_text = "\n".join(
@@ -205,12 +205,6 @@ Unique Visitors: {summary.unique_visitors.current:,}
 {ai_summary}
 
 ───────────────────────────────────────────────────────────
-🏆 TOP PAGES
-───────────────────────────────────────────────────────────
-
-{top_pages_text}
-
-───────────────────────────────────────────────────────────
 🌐 TRAFFIC SOURCES
 ───────────────────────────────────────────────────────────
 
@@ -219,7 +213,7 @@ Unique Visitors: {summary.unique_visitors.current:,}
 ───────────────────────────────────────────────────────────
 
 Generated on {datetime.now().strftime('%B %d, %Y at %I:%M %p')}
-Automated Analytics Report • Powered by Vercel & AI
+Automated Analytics Report • Design by &copy; {date.today().year} <a href="mailto:andrej.cicmansky@gmail.com">Andrej Čičmanský</a>
 
 ═══════════════════════════════════════════════════════════
     """

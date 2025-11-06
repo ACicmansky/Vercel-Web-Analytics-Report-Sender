@@ -16,10 +16,16 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # Vercel Configuration
-    vercel_api_token: str = Field(..., description="Vercel API authentication token")
-    vercel_team_id: Optional[str] = Field(None, description="Vercel team ID")
-    vercel_project_id: Optional[str] = Field(None, description="Vercel project ID")
+    # Google Analytics Configuration
+    ga_property_id: str = Field(..., description="Google Analytics 4 Property ID")
+    ga_credentials_file: Optional[str] = Field(
+        None,
+        description="Path to service account JSON file",
+    )
+    GA_CREDENTIALS_JSON_BASE64: Optional[str] = Field(
+        None,
+        description="Service account JSON as string (for env vars)",
+    )
     target_website: str = Field(..., description="Target website to track")
 
     # AI Configuration
@@ -38,7 +44,7 @@ class Settings(BaseSettings):
 
     email_from: str = Field(..., description="Sender email address")
     email_from_name: str = Field(
-        default="Vercel Analytics Reporter",
+        default="Analytics Reporter",
         description="Sender name",
     )
     email_to: str = Field(..., description="Recipient email address")
@@ -102,6 +108,20 @@ class Settings(BaseSettings):
             f"Unsupported AI model: {v}. "
             f"Supported models: {gemini_models}"
         )
+
+    @field_validator("ga_credentials_file", "GA_CREDENTIALS_JSON_BASE64")
+    @classmethod
+    def validate_ga_credentials(cls, v: Optional[str], info) -> Optional[str]:
+        """Validate that at least one GA credential method is provided."""
+        # This validator runs for each field, so we check in model_validator
+        return v
+
+    def model_post_init(self, __context) -> None:
+        """Validate that at least one GA credential is provided."""
+        if not self.ga_credentials_file and not self.GA_CREDENTIALS_JSON_BASE64:
+            raise ValueError(
+                "Either GA_CREDENTIALS_FILE or GA_CREDENTIALS_JSON_BASE64 must be provided"
+            )
 
 
 def load_settings() -> Settings:

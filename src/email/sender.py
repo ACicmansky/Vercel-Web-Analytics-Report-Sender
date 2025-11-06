@@ -1,6 +1,7 @@
 """Email sending functionality using SMTP."""
 
 import smtplib
+import markdown
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import Optional
@@ -197,7 +198,7 @@ Please check the application logs for more information.
         text_part = MIMEText(text_content, "plain")
 
         # Create HTML version
-        html_content = create_html_email(summary, ai_summary, website)
+        html_content = create_html_email(summary, markdown.markdown(ai_summary), website)
         html_part = MIMEText(html_content, "html")
 
         # Attach parts (plain text first, then HTML)

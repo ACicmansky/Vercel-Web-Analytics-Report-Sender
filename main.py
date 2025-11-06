@@ -1,4 +1,4 @@
-"""Main entry point for Vercel Web Analytics Report Sender."""
+"""Main entry point for Google Analytics Report Sender."""
 
 import sys
 from datetime import datetime, timedelta
@@ -11,7 +11,7 @@ from src.email.sender import EmailSender
 from src.processing.analyzer import AnalyticsAnalyzer
 from src.scheduler import ReportScheduler
 from src.utils.logger import setup_logger
-from src.vercel.client import VercelClient
+from src.google_analytics.client import GoogleAnalyticsClient
 
 
 def generate_report() -> None:
@@ -34,12 +34,13 @@ def generate_report() -> None:
         )
 
         # Fetch analytics data
-        logger.info("Fetching analytics data from Vercel...")
-        with VercelClient(settings) as vercel_client:
-            analytics_data = vercel_client.fetch_analytics(start_date, end_date)
+        logger.info("Fetching analytics data from Google Analytics...")
+        with GoogleAnalyticsClient(settings) as ga_client:
+            analytics_data = ga_client.fetch_analytics(start_date, end_date)
         logger.info(
-            f"Analytics data fetched: {analytics_data.total_views} views, "
-            f"{analytics_data.unique_visitors} visitors"
+            f"Analytics data fetched: {analytics_data.audience.sessions} sessions, "
+            f"{analytics_data.audience.total_users} users, "
+            f"{analytics_data.total_conversions} conversions"
         )
 
         # Process and analyze data
@@ -74,22 +75,22 @@ def generate_report() -> None:
         logger.error(f"Report generation failed: {e}", exc_info=True)
 
         # Try to send error notification
-        try:
-            settings = load_settings()
-            email_sender = EmailSender(settings)
-            email_sender.send_error_notification(
-                error_message=str(e),
-                error_details=f"Error type: {type(e).__name__}\n\nSee logs for full details.",
-            )
-        except Exception as notify_error:
-            logger.error(f"Failed to send error notification: {notify_error}")
+        # try:
+        #     settings = load_settings()
+        #     email_sender = EmailSender(settings)
+        #     email_sender.send_error_notification(
+        #         error_message=str(e),
+        #         error_details=f"Error type: {type(e).__name__}\n\nSee logs for full details.",
+        #     )
+        # except Exception as notify_error:
+        #     logger.error(f"Failed to send error notification: {notify_error}")
 
         raise
 
 
 def test_connections() -> bool:
     """
-    Test all external connections (Vercel API, AI API, SMTP).
+    Test all external connections (Google Analytics API, AI API, SMTP).
 
     Returns:
         True if all tests pass, False otherwise
@@ -100,13 +101,13 @@ def test_connections() -> bool:
         settings = load_settings()
         all_passed = True
 
-        # Test Vercel API
-        logger.info("Testing Vercel API connection...")
-        with VercelClient(settings) as vercel_client:
-            if vercel_client.test_connection():
-                logger.info("✓ Vercel API connection successful")
+        # Test Google Analytics API
+        logger.info("Testing Google Analytics API connection...")
+        with GoogleAnalyticsClient(settings) as ga_client:
+            if ga_client.test_connection():
+                logger.info("✓ Google Analytics API connection successful")
             else:
-                logger.error("✗ Vercel API connection failed")
+                logger.error("✗ Google Analytics API connection failed")
                 all_passed = False
 
         # Test AI API
@@ -145,7 +146,7 @@ def main() -> None:
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Vercel Web Analytics Report Sender"
+        description="Google Analytics Report Sender"
     )
     parser.add_argument(
         "--run-once",
@@ -183,7 +184,7 @@ def main() -> None:
             retention=settings.log_retention,
         )
 
-        logger.info("Vercel Web Analytics Report Sender started")
+        logger.info("Google Analytics Report Sender started")
         logger.info(f"Python version: {sys.version}")
 
         # Test connections mode

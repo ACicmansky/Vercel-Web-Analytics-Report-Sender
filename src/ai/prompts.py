@@ -40,7 +40,7 @@ def create_summary_prompt(summary: AnalyticsSummary, website: str) -> str:
 
     # Format geographic data
     geo_text = "\n".join(
-        f"  - {geo['country']}: {geo['visitors']} visitors ({geo['percentage']:.1f}%)"
+        f"  - {geo['location']}: {geo['visitors']} visitors ({geo['percentage']:.1f}%)"
         for geo in summary.geographic_breakdown[:5]
     )
 

@@ -35,15 +35,27 @@ python main.py --log-level DEBUG
 
 ## Required Credentials
 
-### Vercel API
-- **Token**: https://vercel.com/account/tokens
-- **Team ID**: From Vercel dashboard
-- **Project ID**: From Vercel dashboard
+### Google Analytics 4 API
+- **Property ID**: From GA4 dashboard (Admin → Property Settings)
+- **Service Account**: Create in Google Cloud Console
+- **Setup Steps**:
+  1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+  2. Create new project or select existing
+  3. Enable "Google Analytics Data API"
+  4. Create Service Account (IAM & Admin → Service Accounts)
+  5. Download JSON credentials
+  6. In GA4: Admin → Property Access Management
+  7. Add service account email with "Viewer" role
+  8. Configure custom events in GA4:
+     - `form_submit`
+     - `email_click`
+     - `phone_click`
 - Configuration in `.env`:
   ```env
-  VERCEL_API_TOKEN=your_token_here
-  VERCEL_TEAM_ID=your_team_id
-  VERCEL_PROJECT_ID=your_project_id
+  GA_PROPERTY_ID=123456789
+  GA_CREDENTIALS_FILE=path/to/service-account.json
+  # OR for production (base64 encoded):
+  # GA_CREDENTIALS_JSON_BASE64=eyJ0eXBlIjoi...
   TARGET_WEBSITE=www.lemolegal.sk
   ```
 
@@ -121,10 +133,12 @@ uv sync
 pip install -e .
 ```
 
-#### "Authentication failed" - Vercel API
-- Verify API token is correct
-- Check token has required permissions
-- Ensure team ID and project ID are correct
+#### "Authentication failed" - Google Analytics API
+- Verify service account JSON file path is correct
+- Check service account has "Viewer" role in GA4 property
+- Ensure GA4 Property ID is correct (numbers only)
+- Verify Google Analytics Data API is enabled in Cloud Console
+- Check service account JSON is valid (not corrupted)
 
 #### "Authentication failed" - SMTP (Gmail)
 - **Use App Password**, not regular password
@@ -152,7 +166,7 @@ python main.py --test
 ```
 
 This will check:
-- ✓ Vercel API connection
+- ✓ Google Analytics API connection
 - ✓ Google Gemini API connection
 - ✓ SMTP email connection
 
