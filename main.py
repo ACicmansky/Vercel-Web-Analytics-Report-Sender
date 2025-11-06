@@ -37,6 +37,18 @@ def generate_report() -> None:
         logger.info("Fetching analytics data from Google Analytics...")
         with GoogleAnalyticsClient(settings) as ga_client:
             analytics_data = ga_client.fetch_analytics(start_date, end_date)
+            
+            # Fetch previous period for comparison
+            previous_start = start_date - timedelta(days=settings.report_interval_days)
+            previous_end = start_date
+            logger.info(
+                f"Fetching previous period data for comparison "
+                f"({previous_start.date()} to {previous_end.date()})..."
+            )
+            previous_analytics_data = ga_client.fetch_analytics(
+                previous_start, previous_end
+            )
+        
         logger.info(
             f"Analytics data fetched: {analytics_data.audience.sessions} sessions, "
             f"{analytics_data.audience.total_users} users, "
@@ -46,7 +58,7 @@ def generate_report() -> None:
         # Process and analyze data
         logger.info("Processing analytics data...")
         analyzer = AnalyticsAnalyzer()
-        summary = analyzer.analyze(analytics_data)
+        summary = analyzer.analyze(analytics_data, previous_analytics_data)
         logger.info(
             f"Analysis complete: {len(summary.key_insights)} insights, "
             f"{len(summary.recommendations)} recommendations"
